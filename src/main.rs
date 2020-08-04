@@ -57,7 +57,7 @@ impl Bacteria {
 
     fn single_tick(&mut self) {
         let t_sum: u16 = self.neighbors.iter().sum();
-        if t_sum > 1 && t_sum < 4{
+        if t_sum == 3 {
             if self.height == 0 {
                 self.height = 1;
             }
@@ -81,14 +81,15 @@ impl Bacteria {
         }
     }
 
-    fn colony_tick(&mut self) {
+    fn colony_tick(&mut self, n_max: &u16) {
         let t_sum: u16 = self.neighbors.iter().sum::<u16>();
-        if t_sum > (8*self.height).into() {
+        if t_sum >= (8*self.height).into() {
             if self.height > 0 {
                 self.height += 1;
             }
-        } else if t_sum == (4*self.height).into() {
-            if self.height == 0 {
+        }
+        else if self.height == 0 {
+            if t_sum >= 4*(*n_max) {
                 self.height += 1;
             }
         }
@@ -99,7 +100,7 @@ impl Bacteria {
             if n_max <= &1 && self.height <= 1 {
                 self.single_tick();
             } else if n_max < &4 && self.height <= 4  {
-                self.colony_tick();
+                self.colony_tick(n_max);
             }
         }
     }
