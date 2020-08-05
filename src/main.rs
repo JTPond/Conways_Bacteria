@@ -16,7 +16,7 @@ use calcify::{Tree, Collection, Bin, Point};
 use calcify::io::ToFile;
 
 const BOARD_SIZE: usize = 2000;
-const SEED_PROB: f64 = 0.005;
+const SEED_PROB: f64 = 0.1;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 struct Bacteria {
@@ -81,15 +81,15 @@ impl Bacteria {
         }
     }
 
-    fn colony_tick(&mut self, n_max: &u16) {
+    fn colony_tick(&mut self, n_max: u16) {
         let t_sum: u16 = self.neighbors.iter().sum::<u16>();
-        if t_sum >= (8*self.height).into() {
+        if t_sum >= (8*(self.height-1)).into() {
             if self.height > 0 {
                 self.height += 1;
             }
         }
         else if self.height == 0 {
-            if t_sum >= 4*(*n_max) {
+            if t_sum >= 4*n_max {
                 self.height += 1;
             }
         }
@@ -97,10 +97,11 @@ impl Bacteria {
 
     pub fn tick(&mut self) {
         if let Some(n_max) = self.neighbors.iter().max() {
-            if n_max <= &1 && self.height <= 1 {
+            let b_max = *n_max;
+            if b_max <= 1 && self.height <= 1 {
                 self.single_tick();
-            } else if n_max < &4 && self.height <= 4  {
-                self.colony_tick(n_max);
+            } else if b_max < 3 && self.height <= 3  {
+                self.colony_tick(b_max);
             }
         }
     }
@@ -115,8 +116,18 @@ fn main() -> Result<(),Box<dyn error::Error>> {
     let mut n_frame: Vec<Bacteria>;
 
     let mut image = File::create("./scratch/test_2.gif").unwrap();
+    // let mut pixels: Vec<u8> = Vec::new();
+    // for cp in (0..=255).into_iter().rev() {
+    //     for _ in 0..3 {
+    //         pixels.push(cp);
+    //     }
+    // }
+    // let mut encoder = Encoder::new(&mut image, BOARD_SIZE.try_into().unwrap(),
+    //                                             BOARD_SIZE.try_into().unwrap(),
+    //                                             &pixels).unwrap();
     let mut encoder = Encoder::new(&mut image, BOARD_SIZE.try_into().unwrap(),
                                                BOARD_SIZE.try_into().unwrap(), &[255,255,255,
+                                                                                 215,225,215, //D7E1D7
                                                                                  108,135,109, //#6C876D
                                                                                  28,61,30, //#1C3D1E
                                                                                  3,26,4 //#031A04
@@ -137,7 +148,7 @@ fn main() -> Result<(),Box<dyn error::Error>> {
                                                     &pixels,
                                                     None)).unwrap();
 
-    for _t in 0..100 {
+    for _t in 0..200 {
         n_frame = frame.par_iter().map(|b|{
             let mut ib = *b;
             ib.init_neighbors(&frame[..]);
@@ -152,9 +163,11 @@ fn main() -> Result<(),Box<dyn error::Error>> {
             frame.iter().map(|b| b.height as f64).sum::<f64>()
         );
         if let Some(n_max) = frame.iter().map(|b| b.height).max() {
-            if n_max >= 2 {
-                for bb in frame.iter().filter(|b| b.height == n_max) {
-                    max_points.push(Point::new(bb.i as f64, bb.j as f64));
+            if n_max > 3 {
+                for (i,bb) in frame.iter().filter(|b| b.height == n_max).enumerate() {
+                    if n_frame[i].height == n_max - 1 {
+                        max_points.push(Point::new(bb.i as f64, bb.j as f64));
+                    }
                 }
             }
             maxes.push(n_max as f64);
@@ -164,11 +177,13 @@ fn main() -> Result<(),Box<dyn error::Error>> {
                                                         BOARD_SIZE.try_into().unwrap(),
                                                         &pixels,
                                                         None);
-        g_frame.delay = 33;
+        g_frame.delay = 16;
         encoder.write_frame(&g_frame).unwrap();
     }
-    let max_dist: Collection<Bin> = maxes.hist(10);
+    let max_dist: Collection<Bin> = maxes.hist(5);
     let mut ttree = Tree::new("Bacteria Data");
+    ttree.add_field("Desc","Data for a test run of Conways Bacteria")?;
+    ttree.add_field("Details",&format!("BOARD_SIZE: {}, SEED_PROB: {}",BOARD_SIZE,SEED_PROB))?;
     ttree.add_branch("Max Heights",maxes,"f64")?;
     ttree.add_branch("Max Points",max_points,"Point")?;
     ttree.add_branch("Total Heights",tots,"f64")?;
