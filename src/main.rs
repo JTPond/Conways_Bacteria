@@ -17,6 +17,7 @@ use calcify::io::ToFile;
 
 const BOARD_SIZE: usize = 2000;
 const SEED_PROB: f64 = 0.1;
+const TIME_STEPS: usize = 300;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 struct Bacteria {
@@ -148,7 +149,7 @@ fn main() -> Result<(),Box<dyn error::Error>> {
                                                     &pixels,
                                                     None)).unwrap();
 
-    for _t in 0..200 {
+    for _t in 0..TIME_STEPS {
         n_frame = frame.par_iter().map(|b|{
             let mut ib = *b;
             ib.init_neighbors(&frame[..]);
@@ -183,7 +184,7 @@ fn main() -> Result<(),Box<dyn error::Error>> {
     let max_dist: Collection<Bin> = maxes.hist(5);
     let mut ttree = Tree::new("Bacteria Data");
     ttree.add_field("Desc","Data for a test run of Conways Bacteria")?;
-    ttree.add_field("Details",&format!("BOARD_SIZE: {}, SEED_PROB: {}",BOARD_SIZE,SEED_PROB))?;
+    ttree.add_field("Details",&format!("BOARD_SIZE: {}, SEED_PROB: {}, TIME_STEPS: {}",BOARD_SIZE,SEED_PROB,TIME_STEPS))?;
     ttree.add_branch("Max Heights",maxes,"f64")?;
     ttree.add_branch("Max Points",max_points,"Point")?;
     ttree.add_branch("Total Heights",tots,"f64")?;
