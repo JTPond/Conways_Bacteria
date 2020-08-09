@@ -16,7 +16,7 @@ use calcify::{Tree, Collection, Bin, Point};
 use calcify::io::ToFile;
 
 const BOARD_SIZE: usize = 2000;
-const SEED_PROB: f64 = 0.1;
+const SEED_PROB: f64 = 0.5;
 const TIME_STEPS: usize = 300;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -116,7 +116,7 @@ fn main() -> Result<(),Box<dyn error::Error>> {
     }).collect();
     let mut n_frame: Vec<Bacteria>;
 
-    let mut image = File::create("./scratch/test_2.gif").unwrap();
+    let mut image = File::create(format!("./scratch/seed_test_{}.gif",SEED_PROB)).unwrap();
     // let mut pixels: Vec<u8> = Vec::new();
     // for cp in (0..=255).into_iter().rev() {
     //     for _ in 0..3 {
@@ -189,6 +189,6 @@ fn main() -> Result<(),Box<dyn error::Error>> {
     ttree.add_branch("Max Points",max_points,"Point")?;
     ttree.add_branch("Total Heights",tots,"f64")?;
     ttree.add_branch("Height dists",max_dist,"Bin")?;
-    ttree.write_msg("./scratch/test_2.msg")?;
+    ttree.write_msg(&format!("./scratch/seed_test_{}.msg",SEED_PROB))?;
     Ok(())
 }
