@@ -16,7 +16,7 @@ use calcify::{Tree, Collection, Bin, Point};
 use calcify::io::ToFile;
 
 const BOARD_SIZE: usize = 2000;
-const SEED_PROB: f64 = 0.5;
+const SEED_PROB: f64 = 0.4;
 const TIME_STEPS: usize = 300;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
