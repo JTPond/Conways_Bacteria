@@ -18,6 +18,8 @@ use calcify::io::ToFile;
 const BOARD_SIZE: usize = 2000;
 const SEED_PROB: f64 = 0.4;
 const TIME_STEPS: usize = 300;
+const MAX_HEIGHT: u16 = 4;
+const STEP: usize = 32/MAX_HEIGHT as usize;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 struct Bacteria {
@@ -101,7 +103,7 @@ impl Bacteria {
             let b_max = *n_max;
             if b_max <= 1 && self.height <= 1 {
                 self.single_tick();
-            } else if b_max < 3 && self.height <= 3  {
+            } else if b_max < (MAX_HEIGHT-1) && self.height <= (MAX_HEIGHT-1)  {
                 self.colony_tick(b_max);
             }
         }
@@ -116,23 +118,23 @@ fn main() -> Result<(),Box<dyn error::Error>> {
     }).collect();
     let mut n_frame: Vec<Bacteria>;
 
-    let mut image = File::create(format!("./scratch/seed_test_{}.gif",SEED_PROB)).unwrap();
-    // let mut pixels: Vec<u8> = Vec::new();
-    // for cp in (0..=255).into_iter().rev() {
-    //     for _ in 0..3 {
-    //         pixels.push(cp);
-    //     }
-    // }
-    // let mut encoder = Encoder::new(&mut image, BOARD_SIZE.try_into().unwrap(),
-    //                                             BOARD_SIZE.try_into().unwrap(),
-    //                                             &pixels).unwrap();
+    let mut image = File::create(format!("./scratch/height_test_{}_{}.gif",MAX_HEIGHT,SEED_PROB)).unwrap();
+
+    // #FFFFFF -> #031A04 + #000000, so https://coolors.co/gradient-palette/ffffff-031a04?number=30
+    let full_pall: Vec<[u8;3]> = vec![[255, 255, 255], [246, 247, 246], [238, 239, 238], [229, 231, 229], [220, 223, 220],
+                                      [212, 216, 212], [203, 208, 203], [194, 200, 194], [185, 192, 186], [177, 184, 177],
+                                      [168, 176, 168], [159, 168, 160], [151, 160, 151], [142, 152, 142], [133, 144, 134],
+                                      [125, 137, 125], [116, 129, 117], [107, 121, 108], [99, 113, 99],   [90, 105, 91],
+                                      [81, 97, 82],    [73, 89, 73],    [64, 81, 65],    [55, 73, 56],    [46, 65, 47],
+                                      [38, 58, 39],    [29, 50, 30],    [20, 42, 21],    [12, 34, 13],    [3, 26, 4],
+                                      [0, 0, 0]];
+    let mut last = vec![252, 215, 25]; //#fcd719
+    let mut pixels: Vec<u8> = full_pall.iter().step_by(STEP).flatten().copied().collect();
+    pixels.append(&mut last);
+
     let mut encoder = Encoder::new(&mut image, BOARD_SIZE.try_into().unwrap(),
-                                               BOARD_SIZE.try_into().unwrap(), &[255,255,255,
-                                                                                 215,225,215, //D7E1D7
-                                                                                 108,135,109, //#6C876D
-                                                                                 28,61,30, //#1C3D1E
-                                                                                 3,26,4 //#031A04
-                                                                                ]).unwrap();
+                                                BOARD_SIZE.try_into().unwrap(),
+                                                &pixels).unwrap();
 
     let mut max_points: Collection<Point> = Collection::empty();
     let mut maxes: Collection<f64> = Collection::empty();
@@ -184,11 +186,11 @@ fn main() -> Result<(),Box<dyn error::Error>> {
     let max_dist: Collection<Bin> = maxes.hist(5);
     let mut ttree = Tree::new("Bacteria Data");
     ttree.add_field("Desc","Data for a test run of Conways Bacteria")?;
-    ttree.add_field("Details",&format!("BOARD_SIZE: {}, SEED_PROB: {}, TIME_STEPS: {}",BOARD_SIZE,SEED_PROB,TIME_STEPS))?;
+    ttree.add_field("Details",&format!("BOARD_SIZE: {}, SEED_PROB: {}, TIME_STEPS: {}, MAX_HEIGHT: {}",BOARD_SIZE,SEED_PROB,TIME_STEPS,MAX_HEIGHT))?;
     ttree.add_branch("Max Heights",maxes,"f64")?;
     ttree.add_branch("Max Points",max_points,"Point")?;
     ttree.add_branch("Total Heights",tots,"f64")?;
     ttree.add_branch("Height dists",max_dist,"Bin")?;
-    ttree.write_msg(&format!("./scratch/seed_test_{}.msg",SEED_PROB))?;
+    ttree.write_msg(&format!("./scratch/height_test_{}_{}.msg",MAX_HEIGHT,SEED_PROB))?;
     Ok(())
 }
